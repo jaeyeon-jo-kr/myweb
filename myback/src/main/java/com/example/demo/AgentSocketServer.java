@@ -89,7 +89,10 @@ public class AgentSocketServer implements CommandLineRunner {
         if (tokens.length >= 3) {
             String hostname = tokens[1];
             double cpuUsage = Double.parseDouble(tokens[2]);
-            System.out.println("📈 [실시간 지표] 호스트: " + hostname + " -> CPU 사용량: " + cpuUsage + "%");
+            double memoryUsage = Double.parseDouble(tokens[3]);
+            System.out.println("📈 [실시간 지표] 호스트: " + hostname + 
+            " -> CPU 사용량: " + cpuUsage + "%" + 
+            " , Memory 사용량: " + memoryUsage + "%");
             // TODO: 시계열 수집 DB(MySQL/Redis)에 저장 및 웹소켓을 통한 Vue.js 실시간 푸시 공간
         }
     }

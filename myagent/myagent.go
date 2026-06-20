@@ -9,5 +9,6 @@ func main() {
 	} else {
 		fmt.Printf("error : %s\n", err)
 	}
-	ConnectServer()
+	fmt.Printf("%s\n", GetCpuStatus())
+	RunClient()
 }
