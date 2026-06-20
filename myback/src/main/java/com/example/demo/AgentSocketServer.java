@@ -2,7 +2,11 @@ package com.example.demo;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
-import org.springframework.web.socket.server.*;;
+import org.springframework.web.socket.server.*;
+
+import tools.jackson.databind.ObjectMapper;
+
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -19,9 +23,13 @@ public class AgentSocketServer implements CommandLineRunner {
     private final ExecutorService threadPool = Executors.newFixedThreadPool(10);
 
     private final SystemStatusManager statusManager;
+    private final SimpMessagingTemplate messagingTemplate;
+    private final ObjectMapper mapper = new ObjectMapper();
 
-    public AgentSocketServer(SystemStatusManager statusManager) {
+    public AgentSocketServer(SystemStatusManager statusManager, 
+        SimpMessagingTemplate messagingTemplate) {
         this.statusManager = statusManager;
+        this.messagingTemplate = messagingTemplate;
     }
 
     @Override
@@ -101,6 +109,9 @@ public class AgentSocketServer implements CommandLineRunner {
             " -> CPU 사용량: " + cpuUsage + "%" + 
             " , Memory 사용량: " + memoryUsage + "%");
             statusManager.updateStatus(hostname, cpuUsage, memoryUsage);
+            
+            String response = mapper.writeValueAsString(statusManager);
+            messagingTemplate.convertAndSend("/topic/cpu_info", response);
         }
     }
 }
