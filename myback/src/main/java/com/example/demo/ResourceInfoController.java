@@ -13,9 +13,9 @@ public class ResourceInfoController {
     }
 
     @MessageMapping("/info")
-    @SendTo("/topic/cpu_info")
-    public String SystemStatus()
+    @SendTo("/topic/system_list")
+    public String SystemList()
     {
-       return statusManager.getStatusMessage();
+       return statusManager.getSystemList();
     }
 }

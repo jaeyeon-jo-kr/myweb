@@ -4,6 +4,7 @@ import { LineChart } from 'vue-chart-3'
 import { Chart, registerables } from 'chart.js'
 import { type ChartData } from 'chart.js'
 import { connectWebSocket, deactivateWebSocket, isConnected } from '../websocket/websocket.ts'
+import { memoryUsage } from 'process'
 
 Chart.register(...registerables)
 
@@ -34,57 +35,51 @@ const chartData = ref<ChartData<'line'>>({
   ]
 })
 
+const updateCpuUsage = (cpuUsage:any) => {
+    if (!chartData.value.datasets[0]?.data) 
+        return
+    chartData.value.datasets[0].data.push(parseInt(cpuUsage))
+    console.debug('datasets:', cpuUsage)
 
-// 4. 1초마다 들어오는 데이터를 차트에 밀어 넣는 핵심 함수
+    if(!chartData.value.labels?.length)
+        return
+    if (chartData.value.labels.length > 20) {
+        chartData.value.labels.shift()
+        chartData.value.datasets[0].data.shift()
+    }
+}
+
+const updateMemoryUsage = (memoryUsage:any) => {
+    // y축 데이터 배열에 실시간 CPU 값 추가
+    if (!chartData.value.datasets[1]?.data) 
+        return
+    chartData.value.datasets[1].data.push(parseInt(memoryUsage))
+
+    // 🚨 패킷 다이어트 및 메모리 관리: 
+    // 데이터가 무한히 쌓이면 브라우저가 멈추므로, 최근 20개 지표만 화면에 유지하고 오래된 것은 밀어냅니다(shift).
+    if(!chartData.value.labels?.length)
+        return
+    if (chartData.value.labels.length > 20) {
+        chartData.value.labels.shift()
+        chartData.value.datasets[1].data.shift()
+    }
+}
+
 const updateChart = (messageBody:string) => {
     const now = new Date()
     const timeStr:string = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
 
     const metrics = JSON.parse(messageBody)
-        
-    // x축 시간 배열에 현재 시간 추가
-    // ensure labels/datasets arrays exist before pushing
+    console.debug('receive metrics' + messageBody)
+
     if (!chartData.value.labels) 
         chartData.value.labels = []
     chartData.value.labels.push(timeStr)
 
-    // y축 데이터 배열에 실시간 CPU 값 추가
-    if (!chartData.value.datasets[0]?.data) 
-        return
-    chartData.value.datasets[0].data.push(parseInt(metrics.cpuUsage))
-    console.debug('datasets:', metrics.cpuUsage)
-
-    // 🚨 패킷 다이어트 및 메모리 관리: 
-    // 데이터가 무한히 쌓이면 브라우저가 멈추므로, 최근 20개 지표만 화면에 유지하고 오래된 것은 밀어냅니다(shift).
-    if(!chartData.value.labels?.length)
-        return
-    if (chartData.value.labels.length > 20) {
-        chartData.value.labels.shift()
-        chartData.value.datasets[0].data.shift()
-    }
-
-    // y축 데이터 배열에 실시간 CPU 값 추가
-    if (!chartData.value.datasets[1]?.data) 
-        return
-    chartData.value.datasets[1].data.push(parseInt(metrics.memoryUsage))
-    console.debug('datasets:', metrics.memoryUsage)
-
-    // 🚨 패킷 다이어트 및 메모리 관리: 
-    // 데이터가 무한히 쌓이면 브라우저가 멈추므로, 최근 20개 지표만 화면에 유지하고 오래된 것은 밀어냅니다(shift).
-    if(!chartData.value.labels?.length)
-        return
-    if (chartData.value.labels.length > 20) {
-        chartData.value.labels.shift()
-        chartData.value.datasets[0].data.shift()
-    }
-
-    console.debug('데이터 삽입 완료!')
+    updateCpuUsage(metrics.cpuUsage)
+    updateMemoryUsage(metrics.memoryUsage)
 }
 
-      
-
-
-// 2. 차트 세부 옵션 설정 (실시간 최적화)
 const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
@@ -107,9 +102,6 @@ const chartOptions = {
     duration: 1000 // 1초마다 데이터가 바뀌므로 애니메이션 속도를 0.3초로 제한하여 부드럽게 연출
   }
 }
-
-
-
 
 // 라이프사이클 관리
 onMounted(() => {

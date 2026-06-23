@@ -108,9 +108,10 @@ public class AgentSocketServer implements CommandLineRunner {
             System.out.println("📈 [실시간 지표] 호스트: " + hostname + 
             " -> CPU 사용량: " + cpuUsage + "%" + 
             " , Memory 사용량: " + memoryUsage + "%");
-            statusManager.updateStatus(hostname, cpuUsage, memoryUsage);
-            
-            String response = mapper.writeValueAsString(statusManager);
+
+            DeviceStatus deviceStatus = statusManager.updateStatus(hostname, cpuUsage, memoryUsage);
+            String response = mapper.writeValueAsString(deviceStatus);
+            System.out.println("response:" + response);
             messagingTemplate.convertAndSend("/topic/cpu_info", response);
         }
     }
