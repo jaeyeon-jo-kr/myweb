@@ -1,4 +1,4 @@
-module myweb/myagent
+module myweb/monitoring_agent
 
 go 1.26.4
 
